@@ -120,12 +120,20 @@ for (let i = 0; i < MAX; i++) {
         console.log('房间' + i + " 有 " + rooms[i].people+'个人');
         // 射球开始
         socket.on('shootstart', function (info) {
+            console.log(info);
             socket.broadcast.emit('shootstart', info);
         })
 
         // 射球结束，如果是多人，则切换当前射门的选手
-        socket.on('shootend', function () {
-            socket.broadcast.emit('shootend');
+        socket.on('shootend', function (info) {
+            console.log(info);
+            socket.broadcast.emit('shootend', info);
+        })
+
+        // 调整方向的，控制方向和射球
+        socket.on('control', function(info){
+            console.log(info);
+            socket.broadcast.emit('control', info);
         })
 
         socket.on('disconnect', function () {
