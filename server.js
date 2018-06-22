@@ -118,6 +118,12 @@ for (let i = 0; i < MAX; i++) {
     rooms[i].socket = io.of('/rooms' + i).on('connection', function (socket) {
         rooms[i].people++;
         console.log('房间' + i + " 有 " + rooms[i].people+'个人');
+        // 设置球员的顺序，如果当前有两个则设置位player1，如果有3个则将第三个设置位player2
+        if(rooms[i].people == 2){
+            socket.emit('set player', 'player1')
+        } else if(rooms[i].people == 3){
+            socket.emit('set player', 'player2')
+        }
         // 射球开始
         socket.on('shootstart', function (info) {
             console.log(info);
