@@ -1,4 +1,4 @@
-'use strict'
+    'use strict'
 
 let express = require('express');
 let app = express();
@@ -42,9 +42,9 @@ for (let n = 0; n < MAX; n++) {
     rooms[n] = new Room();
 }
 
-function getFreeRoom(){
-    for(let n = 0; n < MAX; n++){
-        if(rooms[n].people === 0){
+function getFreeRoom() {
+    for (let n = 0; n < MAX; n++) {
+        if (rooms[n].people === 0) {
             return n;
         }
     }
@@ -65,37 +65,37 @@ io.on('connection', function (socket) {
     })
 })
 
-queue.socket = io.of('/queue').on('connection', function(socket){
+queue.socket = io.of('/queue').on('connection', function (socket) {
     queue.people++;
-    console.log('some one connect queue socket. ' + queue.people);
-    if(queue.people === 1){
+    // console.log('some one connect queue socket. ' + queue.people);
+    if (queue.people === 1) {
         let roomId = getFreeRoom();
         console.log('拿到房间 ' + roomId);
         socket.emit('game mode', 'single');
         if (roomId >= 0) {
             queue.socket.emit('match success', roomId);
-            console.log('match success. ' + queue.people + ' in queue');
+            console.log('match success. there is ' + queue.people + ' in queue');
         } else {
             console.log('no free room');
         }
-    } else if(queue.people === 2){
+    } else if (queue.people === 2) {
         socket.emit('game mode', 'multi');
         let roomId = getFreeRoom();
         console.log('拿到房间 ' + roomId);
-        if(roomId >= 0){
+        if (roomId >= 0) {
             queue.socket.emit('match success', roomId);
-            console.log('match success. ' + queue.people + ' in queue');
+            console.log('match success. there are' + queue.people + ' in queue');
         } else {
             console.log('no free room');
         }
     }
 
-    socket.on('cancel match', function(){
+    socket.on('cancel match', function () {
         queue.people--;
         console.log('some cancel match ' + queue.people);
     })
 
-    socket.on('disconnect', function(){
+    socket.on('disconnect', function () {
         queue.people--;
         console.log('some disconneced match ' + queue.people);
     })
@@ -103,12 +103,12 @@ queue.socket = io.of('/queue').on('connection', function(socket){
 
 hall.socket = io.of('/hall').on('connection', function (socket) {
     hall.people++;
-    console.log('a player connected. ' + hall.people);
+    // console.log('a player connected. ' + hall.people);
     hall.socket.emit('people changed', hall.people);
 
     socket.on('disconnect', function () {
         hall.people--;
-        console.log('a player disconnected. left ' + hall.people + ' in hall');
+        // console.log('a player disconnected. left ' + hall.people + ' in hall');
         hall.socket.emit('people changed', hall.people);
     })
 })
@@ -116,12 +116,14 @@ hall.socket = io.of('/hall').on('connection', function (socket) {
 // 同时创建这么多个房间的链接的socket监听
 for (let i = 0; i < MAX; i++) {
     rooms[i].socket = io.of('/rooms' + i).on('connection', function (socket) {
+        var shoubings = [];
+        var games = [];
         rooms[i].people++;
-        console.log('房间' + i + " 有 " + rooms[i].people+'个人');
+        console.log('房间' + i + " 有 " + rooms[i].people + '个人');
         // 设置球员的顺序，如果当前有两个则设置位player1，如果有3个则将第三个设置位player2
-        if(rooms[i].people <= 2){
+        if (rooms[i].people <= 2) {
             socket.emit('set player', 'player1')
-        } else if(rooms[i].people == 3){
+        } else if (rooms[i].people == 3) {
             socket.emit('set player', 'player2')
         }
         // 射球开始
@@ -137,7 +139,7 @@ for (let i = 0; i < MAX; i++) {
         })
 
         // 调整方向的，控制方向和射球
-        socket.on('control', function(info){
+        socket.on('control', function (info) {
             console.log(info);
             socket.broadcast.emit('control', info);
         })
@@ -145,6 +147,30 @@ for (let i = 0; i < MAX; i++) {
         socket.on('disconnect', function () {
             rooms[i].people--;
             console.log('someone disconnected room ' + i);
+        })
+
+        socket.on('who', function (info) {
+            var who = info;
+            if (who == 'shoubing') {
+                shoubings.push(socket.id);
+                console.log('手柄连接，当前手柄数量 ' + shoubings.length);
+                if (shoubings.length == 1) {
+                    console.log('当前手柄： player1')
+                    socket.broadcast.emit('shoubing', 'player1');
+                } else if (shoubings.length == 2) {
+                    console.log('当前手柄: player2')
+                    socket.broadcast.emit('shoubing', 'player2');
+                } else {
+                    console.log('超出手柄连接数量');
+                    socket.broadcast.emit('shoubing', 'null');
+                }
+            }
+            else if (who == 'game') {
+                games.push(socket.id);
+                console.log('游戏界面连接了，当前游戏界面数量 ' + games.length);
+            } else {
+                console.log('不知道谁连接了 ' + who)
+            }
         })
 
     })
